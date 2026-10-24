@@ -2,176 +2,137 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useReadContract } from "wagmi";
 import ConnectButton from "@/components/ui/ConnectButton";
 import NetworkBadge from "@/components/botchain/NetworkBadge";
 import BuiltOnBotChain from "@/components/botchain/BuiltOnBotChain";
 import { app } from "@/lib/app-config";
+import { descentAbi } from "@/lib/botchain/abi";
+import { getDeployment } from "@/lib/botchain/deployment";
+import { useActiveChainId } from "@/lib/botchain/active-chain";
 
-export type NavItem = { href: string; label: string };
-
-interface PageShellProps {
+export interface PageShellProps {
   children: React.ReactNode;
-  nav?: NavItem[];
-  title?: string;
-  description?: string;
+  activeCount?: number;
 }
 
 /**
- * App frame.
+ * Archetype P · Brutalist Poster Shell.
  *
- * A top bar rather than ghost-pay's 220px rail. These apps have two or three screens, and a rail
- * that wide spends a fifth of a laptop window — and all of a phone — on three links. The bar is
- * the same at every width, which also means there is no drawer, no focus trap and no hamburger to
- * get wrong.
- *
- * Height is `100dvh` rather than `100vh`. On mobile Safari and Chrome, `100vh` is the viewport
- * with the browser chrome *retracted*, so a `h-screen` layout with `overflow-hidden` pushes its
- * own footer under the address bar and the user cannot scroll to it.
+ * Single-statement pages on acid yellow ground (#F7E600) with heavy 4px black borders.
+ * Header: `DESCENT — {n} LIVE` and a bordered connect tag.
+ * Sub-banner: `NO BIDS. PRICE ONLY FALLS. FIRST PAYER WINS. SALES ARE FINAL.`
  */
-export default function PageShell({ children, nav = [], title, description }: PageShellProps) {
+export default function PageShell({ children, activeCount }: PageShellProps) {
+  const pathname = usePathname();
+  const chainId = useActiveChainId();
+  const contract = getDeployment(chainId)?.address;
+
+  // Read latest listings to count active items if not provided
+  const { data: latestData } = useReadContract({
+    address: contract,
+    abi: descentAbi,
+    functionName: "latest",
+    args: [0n, 50n, true],
+    query: {
+      enabled: activeCount === undefined && Boolean(contract),
+      refetchInterval: 10_000,
+    },
+  });
+
+  const countDisplay =
+    activeCount !== undefined
+      ? String(activeCount).padStart(2, "0")
+      : latestData
+      ? String(latestData.length).padStart(2, "0")
+      : "--";
+
+  const isWall = pathname === "/";
+  const isSell = pathname === "/new";
+  const isMine = pathname === "/mine";
+
   return (
-    <div
-      className="flex flex-col overflow-x-hidden"
-      style={{ minHeight: "100dvh", background: "var(--bg-base)" }}
-    >
-      <header
-        className="sticky top-0 z-30 flex-shrink-0"
-        style={{
-          borderBottom: "1px solid var(--border-subtle)",
-          background: "var(--bg-surface)",
-        }}
-      >
-        <div className="mx-auto w-full max-w-[880px] px-4 md:px-6">
-          <div className="flex items-center gap-3 py-2.5">
-            <Link href="/" className="flex items-center gap-2 flex-shrink-0 no-underline">
-              <span
-                className="w-2 h-2 flex-shrink-0"
-                style={{ background: "var(--accent)" }}
-                aria-hidden="true"
-              />
-              <span
-                className="text-[14px] font-semibold tracking-[-0.01em]"
-                style={{ color: "var(--text-primary)" }}
-              >
-                {app.name}
-              </span>
+    <div className="min-h-[100dvh] flex flex-col justify-between bg-[#F7E600] text-[#0A0A0A] font-mono selection:bg-[#0A0A0A] selection:text-[#F7E600]">
+      {/* Top Poster Header */}
+      <header className="border-b-4 border-[#0A0A0A] bg-[#F7E600] sticky top-0 z-40">
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+          {/* Logo / Headline Statement */}
+          <div className="flex items-center gap-3 sm:gap-6">
+            <Link
+              href="/"
+              className="font-poster text-3xl sm:text-4xl font-black tracking-tight text-[#0A0A0A] hover:opacity-80 transition-none"
+            >
+              {app.name.toUpperCase()} — {countDisplay} LIVE
             </Link>
 
-            <div className="flex-1" />
+            {/* Nav Links */}
+            <nav className="flex items-center gap-1 sm:gap-2">
+              <Link
+                href="/"
+                className={[
+                  "px-2.5 py-1 text-xs sm:text-sm font-black border-2 border-[#0A0A0A] uppercase transition-none",
+                  isWall
+                    ? "bg-[#0A0A0A] text-[#F7E600]"
+                    : "bg-[#FFFFFF] text-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-[#F7E600]",
+                ].join(" ")}
+              >
+                WALL
+              </Link>
+              <Link
+                href="/new"
+                className={[
+                  "px-2.5 py-1 text-xs sm:text-sm font-black border-2 border-[#0A0A0A] uppercase transition-none",
+                  isSell
+                    ? "bg-[#0A0A0A] text-[#F7E600]"
+                    : "bg-[#FFFFFF] text-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-[#F7E600]",
+                ].join(" ")}
+              >
+                SELL
+              </Link>
+              <Link
+                href="/mine"
+                className={[
+                  "px-2.5 py-1 text-xs sm:text-sm font-black border-2 border-[#0A0A0A] uppercase transition-none",
+                  isMine
+                    ? "bg-[#0A0A0A] text-[#F7E600]"
+                    : "bg-[#FFFFFF] text-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-[#F7E600]",
+                ].join(" ")}
+              >
+                MY ITEMS
+              </Link>
+            </nav>
+          </div>
+
+          {/* Bordered Tag Connect Control */}
+          <div className="flex items-center gap-2">
             <NetworkBadge />
-            <div className="w-[150px] md:w-[180px] flex-shrink-0">
+            <div className="border-2 border-[#0A0A0A] bg-[#FFFFFF] shadow-[3px_3px_0px_#0A0A0A]">
               <ConnectButton />
             </div>
           </div>
+        </div>
 
-          {nav.length > 0 && <Nav items={nav} />}
+        {/* Global Limits Ticker Banner */}
+        <div className="border-t-2 border-[#0A0A0A] bg-[#0A0A0A] text-[#F7E600] py-1.5 px-4 text-center font-mono text-[11px] sm:text-xs tracking-wider uppercase font-bold overflow-x-auto whitespace-nowrap">
+          NO BIDS. PRICE ONLY FALLS. FIRST PAYER WINS. SALES ARE FINAL.
         </div>
       </header>
 
-      <main className="flex-1 mx-auto w-full max-w-[880px] px-4 py-6 md:px-6 md:py-8">
-        {(title || description) && (
-          <div className="mb-6">
-            {title && (
-              <h1
-                className="text-[20px] md:text-[24px] font-semibold tracking-[-0.015em]"
-                style={{ color: "var(--text-primary)" }}
-              >
-                {title}
-              </h1>
-            )}
-            {description && (
-              <p
-                className="mt-1.5 text-[13px] leading-relaxed"
-                style={{ color: "var(--text-secondary)" }}
-              >
-                {description}
-              </p>
-            )}
-          </div>
-        )}
+      {/* Main Content Viewport */}
+      <main className="flex-1 max-w-[1200px] w-full mx-auto px-4 sm:px-6 py-6 sm:py-10">
         {children}
       </main>
 
-      {/*
-        The ecosystem footer is required, not decorative. BOT Chain's project assessment criteria
-        ask that the footer or an ecosystem-partnership section carry the BOT Chain name and link
-        to both botchain.ai and the explorer; a site without it is not counted, however complete
-        the product is. It lives in the shared shell so no project can ship missing it.
-      */}
-      <footer
-        className="flex-shrink-0 mx-auto w-full max-w-[880px] px-4 py-6 md:px-6"
-        style={{ borderTop: "1px solid var(--border-subtle)" }}
-      >
-        <div className="flex flex-col gap-3">
-          <p className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>
-            {app.tagline}
-          </p>
-
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <span className="inline-flex items-center gap-2">
-              <span
-                aria-hidden="true"
-                className="inline-block w-2 h-2 flex-shrink-0"
-                style={{ background: "var(--accent)", borderRadius: "1px" }}
-              />
-              <BuiltOnBotChain
-                className="text-[11px] uppercase tracking-[0.06em]"
-                style={{ color: "var(--text-secondary)" }}
-              />
-            </span>
-
-            <a
-              href="https://botchain.ai"
-              target="_blank"
-              rel="noreferrer"
-              className="text-[11px] underline"
-              style={{ color: "var(--text-tertiary)" }}
-            >
-              botchain.ai
-            </a>
-
-            <a
-              href="https://scan.botchain.ai"
-              target="_blank"
-              rel="noreferrer"
-              className="text-[11px] underline"
-              style={{ color: "var(--text-tertiary)" }}
-            >
-              BOT Chain Explorer
-            </a>
+      {/* Brutalist Footer */}
+      <footer className="border-t-4 border-[#0A0A0A] bg-[#FFFFFF] py-6 px-4 sm:px-6">
+        <div className="max-w-[1200px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono uppercase font-bold text-[#0A0A0A]">
+          <div className="flex items-center gap-3">
+            <span className="w-3 h-3 bg-[#FF2E00] border-2 border-[#0A0A0A]" />
+            <span>DESCENT DUTCH AUCTION PROTOCOL</span>
           </div>
+          <BuiltOnBotChain />
         </div>
       </footer>
     </div>
-  );
-}
-
-/**
- * Horizontal tabs. `aria-current` rather than colour alone marks the active one, and the active
- * check is an exact match so `/` does not light up on every page.
- */
-function Nav({ items }: { items: NavItem[] }) {
-  const pathname = usePathname();
-
-  return (
-    <nav className="flex items-center gap-1 -mb-px overflow-x-auto">
-      {items.map((item) => {
-        const active = pathname === item.href;
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            aria-current={active ? "page" : undefined}
-            className="nav-link flex items-center px-3 py-2 text-[12px] uppercase tracking-[0.04em] no-underline whitespace-nowrap"
-            style={{
-              color: active ? "var(--accent)" : "var(--text-secondary)",
-              borderBottom: `1px solid ${active ? "var(--accent)" : "transparent"}`,
-            }}
-          >
-            {item.label}
-          </Link>
-        );
-      })}
-    </nav>
   );
 }
