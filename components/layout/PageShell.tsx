@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useReadContract } from "wagmi";
+import { useChainId, useReadContract } from "wagmi";
 import ConnectButton from "@/components/ui/ConnectButton";
 import NetworkBadge from "@/components/botchain/NetworkBadge";
 import BuiltOnBotChain from "@/components/botchain/BuiltOnBotChain";
 import { app } from "@/lib/app-config";
 import { descentAbi } from "@/lib/botchain/abi";
 import { getDeployment } from "@/lib/botchain/deployment";
-import { useActiveChainId } from "@/lib/botchain/active-chain";
+import { isBotChainId } from "@/lib/botchain/chain";
 
 export interface PageShellProps {
   children: React.ReactNode;
@@ -25,8 +25,8 @@ export interface PageShellProps {
  */
 export default function PageShell({ children, activeCount }: PageShellProps) {
   const pathname = usePathname();
-  const chainId = useActiveChainId();
-  const contract = getDeployment(chainId)?.address;
+  const chainId = useChainId();
+  const contract = isBotChainId(chainId) ? getDeployment(chainId).address : undefined;
 
   // Read latest listings to count active items if not provided
   const { data: latestData } = useReadContract({

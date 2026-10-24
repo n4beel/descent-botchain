@@ -18,6 +18,7 @@ export interface ListingPosterProps {
   listing: ListingView;
 }
 
+export default function ListingPoster({ listing }: ListingPosterProps) {
   const publicClient = usePublicClient();
   const publicClientRef = useRef(publicClient);
   publicClientRef.current = publicClient;

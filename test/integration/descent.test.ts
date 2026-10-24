@@ -37,7 +37,7 @@ const local = defineChain({
 
 let node: ChildProcess;
 let publicClient: PublicClient;
-let wallets: WalletClient[];
+let wallets: any[];
 let descentAddress: Address;
 let mockNftAddress: Address;
 

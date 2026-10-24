@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Big_Shoulders_Display, Anonymous_Pro } from "next/font/google";
+import { Big_Shoulders, Anonymous_Pro } from "next/font/google";
 import { EvmProvider } from "@/components/providers/EvmProvider";
 import { ToastProvider } from "@/components/ui/Toast";
 import { app } from "@/lib/app-config";
 import "./globals.css";
 
-const bigShoulders = Big_Shoulders_Display({
+const bigShoulders = Big_Shoulders({
   subsets: ["latin"],
   weight: ["700", "800", "900"],
   variable: "--font-poster",

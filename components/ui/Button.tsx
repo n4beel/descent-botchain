@@ -2,17 +2,19 @@
 
 import { type ButtonHTMLAttributes, forwardRef } from "react";
 
-export type PosterButtonVariant = "slab" | "outline" | "danger" | "ghost";
+export type PosterButtonVariant = "slab" | "primary" | "outline" | "danger" | "ghost";
 export type PosterButtonSize = "sm" | "md" | "lg" | "giant";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: PosterButtonVariant;
   size?: PosterButtonSize;
   busy?: boolean;
+  loading?: boolean;
 }
 
 const variantClasses: Record<PosterButtonVariant, string> = {
   slab: "bg-[#0A0A0A] text-[#F7E600] hover:bg-[#1A1A1A] active:bg-[#000000]",
+  primary: "bg-[#0A0A0A] text-[#F7E600] hover:bg-[#1A1A1A] active:bg-[#000000]",
   outline: "bg-[#FFFFFF] text-[#0A0A0A] hover:bg-[#F0F0F0] active:bg-[#E0E0E0]",
   danger: "bg-[#FF2E00] text-[#0A0A0A] hover:bg-[#E02600] active:bg-[#C01F00]",
   ghost: "bg-transparent text-[#0A0A0A] border-transparent shadow-none hover:bg-[#0A0A0A]/10",
@@ -31,6 +33,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       variant = "slab",
       size = "md",
       busy = false,
+      loading = false,
       disabled,
       children,
       className = "",
@@ -38,12 +41,13 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
+    const isBusy = busy || loading;
     const isGhost = variant === "ghost";
 
     return (
       <button
         ref={ref}
-        disabled={disabled || busy}
+        disabled={disabled || isBusy}
         className={[
           "inline-flex items-center justify-center gap-2 font-mono uppercase font-black cursor-pointer",
           "border-4 border-[#0A0A0A] transition-none select-none",
@@ -55,7 +59,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ].join(" ")}
         {...rest}
       >
-        {busy ? (
+        {isBusy ? (
           <span className="flex items-center gap-2">
             <span className="inline-block w-4 h-4 border-2 border-current border-t-transparent animate-spin" />
             <span>WAITING…</span>
