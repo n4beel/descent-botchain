@@ -22,6 +22,7 @@ const anonymousPro = Anonymous_Pro({
 export const metadata: Metadata = {
   title: `${app.name.toUpperCase()} — ${app.tagline.toUpperCase()}`,
   description: app.tagline,
+  icons: { icon: "/icon.png" },
   openGraph: { title: app.name, description: app.tagline, type: "website", url: app.url },
 };
 

@@ -104,3 +104,18 @@ All findings from `docs/specs/FEEDBACK-descent.md` addressed and verified in ord
 
 - **Console Errors:** 0
 - **Hydration Warnings:** 0
+
+## Feedback round 2
+
+- **Item 1 (Local-stack autonomous mining):** Added `"--block-time", "1"` to Anvil startup args in `scripts/local-stack.mjs`. Seeding continues to complete cleanly with the final timestamp difference within ~2 minutes of real time (`diff: 0s`).
+  - Command run to confirm blocks advance on their own:
+    ```bash
+    b1=$(cast block-number --rpc-url http://127.0.0.1:8708); sleep 3; b2=$(cast block-number --rpc-url http://127.0.0.1:8708); echo "$b1 -> $b2"
+    ```
+    Output: `102 -> 105` (+3 blocks produced automatically in 3 seconds).
+- **Item 3 (Housekeeping):**
+  - Removed tracked `AGENTS.md` and 0-byte `public/favicon.ico` via `git rm`.
+  - Added `AGENTS.md` to `.gitignore`.
+  - Added dedicated 192x192 PNG `app/icon.png` in project brand styling (`#FF2E00`).
+  - Configured `icons: { icon: "/icon.png" }` in `metadata` in `app/layout.tsx` so browsers request `/icon.png` directly and never request `/favicon.ico`.
+
