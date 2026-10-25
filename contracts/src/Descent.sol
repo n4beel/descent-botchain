@@ -90,9 +90,10 @@ contract Descent {
     error NotSeller(uint256 id, address caller);
     error NothingToWithdraw();
     error TransferFailed();
+    error Reentrancy();
 
     modifier nonReentrant() {
-        require(!_locked, "REENTRANT");
+        if (_locked) revert Reentrancy();
         _locked = true;
         _;
         _locked = false;
@@ -110,7 +111,7 @@ contract Descent {
         uint128 startPrice,
         uint128 floorPrice,
         uint64 duration
-    ) external returns (uint256 id) {
+    ) external nonReentrant returns (uint256 id) {
         if (nft.code.length == 0) revert NotAContract(nft);
         if (floorPrice == 0 || startPrice < floorPrice) {
             revert BadPrices(startPrice, floorPrice);

@@ -144,6 +144,8 @@ export function describeError(err: unknown): string {
         return "LISTING DOES NOT EXIST.";
       case "TransferFailed":
         return "TRANSFER FAILED.";
+      case "Reentrancy":
+        return "REENTRANT CALL DETECTED.";
     }
   }
 
@@ -157,6 +159,7 @@ export function describeError(err: unknown): string {
     if (m.includes("BadDuration")) return "PICK TEN MINUTES TO THIRTY DAYS.";
     if (m.includes("NotSeller")) return "ONLY THE SELLER CAN CANCEL.";
     if (m.includes("NothingToWithdraw")) return "NOTHING TO COLLECT.";
+    if (m.includes("Reentrancy")) return "REENTRANT CALL DETECTED.";
     if (m.includes("connector not connected")) return "CONNECT WALLET FIRST.";
     return m.length < 120 ? m.toUpperCase() : `${m.slice(0, 117).toUpperCase()}…`;
   }

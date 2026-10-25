@@ -77,3 +77,30 @@ python3 ../scripts/check-distinct.py descent
 
 ## What could not be tested
 - Real mainnet execution against production BOT Chain validator sets with real BOT funds (all tests run against local anvil nodes simulating chain 968).
+
+## Feedback round 1
+
+All findings from `docs/specs/FEEDBACK-descent.md` addressed and verified in order:
+
+1. **Seed NFTs Generative SVG (Item 1):** Fixed. Replaced the truncated SVG placeholder in `contracts/test/helpers/MockNFT.sol` with a pure-Solidity `Base64` encoder and deterministic multi-rectangle generative SVG generator parameterized by `tokenId`. The resulting `tokenURI` yields valid Base64 JSON with a valid Base64 SVG `image` data URI. Tested via `test_MockNFT_TokenURI_GenerativeSVG` in Foundry and verified in the browser walkthrough that wall cards and poster detail screens display loaded SVG artwork through standard `<img>` tags.
+2. **Decode Creation Event by Name (Item 2):** Fixed. Updated `app/new/page.tsx` to decode the listing creation receipt with `parseEventLogs` using `descentAbi` for the `Listed` event rather than reading raw `topics[1]`.
+3. **Local Stack Environment & Chain Time Alignment (Item 3):** Fixed. `scripts/local-stack.mjs` writes `NEXT_PUBLIC_BOTCHAIN_NETWORK=testnet` and `NEXT_PUBLIC_BOHR_RPC=http://127.0.0.1:8708` to `.env.local`. Started anvil with `--timestamp (realNow - 1600)` so that advancing time by 1600 seconds brings chain timestamp to wall clock time (measured 0s diff, asserted diff <= 120s). Printed Account Role Table for all seeded accounts.
+4. **Reentrancy Custom Error (Item 4):** Fixed. Replaced `require(!_locked, "REENTRANT");` with `if (_locked) revert Reentrancy();` in `contracts/src/Descent.sol`. Added `Reentrancy` custom error to contract, `lib/botchain/abi.ts`, and `lib/errors.ts` (`"REENTRANT CALL DETECTED."`). Updated existing hostile NFT test in `contracts/test/Descent.t.sol` to expect `Descent.Reentrancy.selector` and added unit test in `lib/__tests__/errors.test.ts`. Zero string reverts remain in `contracts/src`.
+5. **Reentrancy Guard on `list` (Item 5):** Fixed. Added `nonReentrant` modifier to `function list(...)` in `contracts/src/Descent.sol`. Added `test_HostileNFT_CannotReenter_List` in `contracts/test/Descent.t.sol` verifying that hostile reentrant tokens cannot attack during token escrow in `list()`.
+6. **Browser Walkthrough (Item 6):** Fixed. Completed browser walkthrough using `docs/specs/tools/mock-wallet.js` and Headless Chrome. 0 console errors and 0 hydration warnings across all §3.2 routes and roles.
+
+### Browser Walkthrough Results
+
+| Route | Role | Action | Status | Result / Notes |
+|---|---|---|---|---|
+| `360px Viewport` | Mobile | Verify mobile responsive layout | PASS | Large price numeral scales; BUY NOW slab fixed to viewport bottom without overlapping bar |
+| `720px / 1280px` | Tablet / Desktop | Verify responsive wall & posters | PASS | 2-column brutalist poster grid renders cleanly with acid-yellow ground and 0px border-radius |
+| `/` | Acc 0 / All | Read Wall & Filter Tabs | PASS | 4 active seeded posters render loaded generative SVGs; toggles LIVE (4), SOLD (1), ALL (6) correctly |
+| `/l/1` | Acc 0 (Buyer) | Buy listing at floor (0.1 BOT) | PASS | Transaction confirmed; stage===confirmed ordered first; displays SOLD stamp and buyer info |
+| `/mine` | Acc 1 (Seller) | Withdraw 0.1 BOT accrued proceeds | PASS | Acc 1 sees 0.1 BOT pending proceeds; executes withdraw; balance zeroes out with confirmed banner |
+| `/l/6` | Acc 0 (Seller) | Cancel active listing #6 | PASS | Acc 0 sees CANCEL LISTING button; executes cancel; listing state transitions to CANCELLED |
+| `/new -> /l/7` | Acc 0 (Seller) | List unlisted Token #2 | PASS | Shows ownership & preview curve; approves token; lists token; decodes Listed event and redirects to `/l/7` |
+| `/l/4 & /l/5` | Observer (No Wallet) | View finalized Sold & Cancelled listings | PASS | Fully readable without wallet; displays historical sale price / buyer and cancelled status |
+
+- **Console Errors:** 0
+- **Hydration Warnings:** 0

@@ -141,9 +141,22 @@ describe("describeError", () => {
     expect(describeError(err)).toBe("TRANSFER FAILED.");
   });
 
+  it("translates Reentrancy", () => {
+    const err = {
+      data: {
+        errorName: "Reentrancy",
+        args: [],
+      },
+    };
+    expect(describeError(err)).toBe("REENTRANT CALL DETECTED.");
+  });
+
   it("handles string messages in standard Error", () => {
     expect(describeError(new Error("PriceNotMet: price dropped"))).toBe(
       "PRICE NOT MET. TRY AGAIN."
+    );
+    expect(describeError(new Error("Reentrancy: locked"))).toBe(
+      "REENTRANT CALL DETECTED."
     );
     expect(describeError(new Error("connector not connected"))).toBe(
       "CONNECT WALLET FIRST."

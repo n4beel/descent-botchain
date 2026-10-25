@@ -435,13 +435,27 @@ contract DescentTest is Test {
 
         vm.deal(bob, 5 ether);
         vm.prank(bob);
-        // During buy(), transferFrom is called, which attempts descent.cancel(id) -> reverts REENTRANT
-        vm.expectRevert("REENTRANT");
+        // During buy(), transferFrom is called, which attempts descent.cancel(id) -> reverts Reentrancy
+        vm.expectRevert(abi.encodeWithSelector(Descent.Reentrancy.selector));
         descent.buy{value: 5 ether}(id);
 
         // Contract remains safe and listing is still active
         Descent.ListingView memory lv = descent.listingOf(id);
         assertEq(lv.state, uint8(Descent.State.Active));
+    }
+
+    function test_HostileNFT_CannotReenter_List() public {
+        HostileNFT hostile = new HostileNFT();
+        hostile.mint(alice, 1);
+
+        // Configure hostile to attack during transferFrom in list()
+        hostile.setAttack(descent, 1, true);
+
+        vm.startPrank(alice);
+        hostile.approve(address(descent), 1);
+        vm.expectRevert(abi.encodeWithSelector(Descent.Reentrancy.selector));
+        descent.list(address(hostile), 1, 5 ether, 1 ether, 1 days);
+        vm.stopPrank();
     }
 
     function test_HostileBuyer_CannotReenter() public {
@@ -556,6 +570,20 @@ contract DescentTest is Test {
         uint256 gasUsed = gasBefore - gasleft();
 
         assertLt(gasUsed, 65_000);
+    }
+
+    function test_MockNFT_TokenURI_GenerativeSVG() public view {
+        string memory uri1 = nft.tokenURI(1);
+        string memory uri2 = nft.tokenURI(2);
+        assertTrue(bytes(uri1).length > 0);
+        assertTrue(bytes(uri2).length > 0);
+        // Ensure uri begins with data:application/json;base64,
+        bytes memory prefix = bytes("data:application/json;base64,");
+        for (uint256 i = 0; i < prefix.length; i++) {
+            assertEq(bytes(uri1)[i], prefix[i]);
+        }
+        // Different token IDs produce different tokenURIs
+        assertTrue(keccak256(bytes(uri1)) != keccak256(bytes(uri2)));
     }
 
     function invariant_BalanceEqualsPending() public view {

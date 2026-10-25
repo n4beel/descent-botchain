@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { formatEther, parseEther } from "viem";
+import { formatEther, parseEther, parseEventLogs } from "viem";
 import {
   useAccount,
   useChainId,
@@ -156,12 +156,13 @@ export default function NewListingPage() {
         // Look for Listed event in logs
         if (receipt && receipt.logs && receipt.logs.length > 0) {
           try {
-            // First topic is Listed event, second topic is id
-            const log = receipt.logs.find(
-              (l) => l.address.toLowerCase() === contract?.toLowerCase()
-            );
-            if (log && log.topics[1]) {
-              const id = BigInt(log.topics[1]);
+            const parsed = parseEventLogs({
+              abi: descentAbi,
+              logs: receipt.logs,
+              eventName: "Listed",
+            });
+            if (parsed.length > 0 && parsed[0].args.id !== undefined) {
+              const id = parsed[0].args.id;
               setCreatedListingId(id);
               pushRef.current(`/l/${id.toString()}`);
             }

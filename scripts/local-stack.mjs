@@ -15,7 +15,7 @@
  *   node scripts/local-stack.mjs
  */
 
-import { spawn } from "node:child_process";
+import { spawn, execSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import {
   createPublicClient,
@@ -39,10 +39,28 @@ const local = defineChain({
   rpcUrls: { default: { http: [RPC] } },
 });
 
-console.log(`Starting anvil on port ${PORT}...`);
+try {
+  execSync(`fuser -k ${PORT}/tcp 2>/dev/null || true`);
+} catch {}
+
+const realNow = Math.floor(Date.now() / 1000);
+const TOTAL_WARP = 1600;
+const startTimestamp = realNow - TOTAL_WARP;
+
+console.log(`Starting anvil on port ${PORT} (timestamp: ${startTimestamp})...`);
 spawn(
   "anvil",
-  ["--port", String(PORT), "--chain-id", String(CHAIN_ID), "--accounts", "10", "--silent"],
+  [
+    "--port",
+    String(PORT),
+    "--chain-id",
+    String(CHAIN_ID),
+    "--accounts",
+    "10",
+    "--timestamp",
+    String(startTimestamp),
+    "--silent",
+  ],
   {
     detached: true,
     stdio: "ignore",
@@ -228,17 +246,38 @@ await pub.waitForTransactionReceipt({ hash: h6 });
 await pub.request({ method: "evm_increaseTime", params: [1600] });
 await pub.request({ method: "evm_mine" });
 
+// Assert final chain time is within 120s of wall clock
+const finalBlock = await pub.getBlock();
+const currentWallTime = Math.floor(Date.now() / 1000);
+const diff = Math.abs(Number(finalBlock.timestamp) - currentWallTime);
+console.log(`Final chain timestamp: ${finalBlock.timestamp} (real: ${currentWallTime}, diff: ${diff}s)`);
+if (diff > 120) {
+  throw new Error(`Chain timestamp skewed by ${diff}s, expected <= 120s`);
+}
+
 const envContent = [
+  `NEXT_PUBLIC_BOTCHAIN_NETWORK=testnet`,
+  `NEXT_PUBLIC_BOHR_RPC=${RPC}`,
   `NEXT_PUBLIC_CONTRACT_968=${descentAddress}`,
   `NEXT_PUBLIC_DEPLOY_BLOCK_968=${dReceipt.blockNumber.toString()}`,
   `NEXT_PUBLIC_NFT_968=${mockNftAddress}`,
   `NEXT_PUBLIC_CHAIN_ID=968`,
-  `NEXT_PUBLIC_RPC_URL=http://127.0.0.1:${PORT}`,
-  "",
+  `NEXT_PUBLIC_RPC_URL=${RPC}`,
 ].join("\n");
 
-writeFileSync(".env.local", envContent);
+writeFileSync(".env.local", envContent + "\n");
 console.log("Wrote .env.local with deployed contract addresses.");
+
+console.log("\n========================================================");
+console.log(`Descent Local Stack Running on ${RPC}`);
+console.log("========================================================");
+console.log("Account Role Table:");
+console.log("--------------------------------------------------------");
+console.log(`Acc 0: ${accounts[0].address} (Seller of active #6; owns unlisted tokens 2 & 3)`);
+console.log(`Acc 1: ${accounts[1].address} (Seller of #1 [at floor 10m], #2 [near floor], #3 [mid-descent])`);
+console.log(`Acc 2: ${accounts[2].address} (Seller of #4 [sold to Acc 3] & #5 [cancelled])`);
+console.log(`Acc 3: ${accounts[3].address} (Buyer of #4)`);
+console.log("--------------------------------------------------------");
 console.log("\nSeeded scenarios:");
 console.log("1. Mid-descent (~40%): Listing #3 (Token 4, 5.0 -> 0.5 BOT)");
 console.log("2. Nearly at floor: Listing #2 (Token 5, 2.5 -> 0.25 BOT)");
@@ -247,3 +286,5 @@ console.log("4. Sold to account 3: Listing #4 (Token 7)");
 console.log("5. Cancelled: Listing #5 (Token 8)");
 console.log("6. Account 0 active: Listing #6 (Token 1, 10.0 -> 1.0 BOT)");
 console.log("Plus Account 0 owns unlisted Token 2 and Token 3 for the create flow.");
+console.log("--------------------------------------------------------");
+console.log("Local stack ready!");
