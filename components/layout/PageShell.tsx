@@ -9,7 +9,7 @@ import BuiltOnBotChain from "@/components/botchain/BuiltOnBotChain";
 import { app } from "@/lib/app-config";
 import { descentAbi } from "@/lib/botchain/abi";
 import { getDeployment } from "@/lib/botchain/deployment";
-import { isBotChainId } from "@/lib/botchain/chain";
+import { isBotChainId, footerLinks } from "@/lib/botchain/chain";
 
 export interface PageShellProps {
   children: React.ReactNode;
@@ -27,6 +27,7 @@ export default function PageShell({ children, activeCount }: PageShellProps) {
   const pathname = usePathname();
   const chainId = useChainId();
   const contract = isBotChainId(chainId) ? getDeployment(chainId).address : undefined;
+  const { site, explorer } = footerLinks();
 
   // Read latest listings to count active items if not provided
   const { data: latestData } = useReadContract({
@@ -130,7 +131,27 @@ export default function PageShell({ children, activeCount }: PageShellProps) {
             <span className="w-3 h-3 bg-[#FF2E00] border-2 border-[#0A0A0A]" />
             <span>DESCENT DUTCH AUCTION PROTOCOL</span>
           </div>
-          <BuiltOnBotChain />
+          <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-mono uppercase font-bold text-[#0A0A0A]">
+            <BuiltOnBotChain className="hover:underline" />
+            <span className="text-[#0A0A0A]/40" aria-hidden="true">•</span>
+            <a
+              href={site}
+              target="_blank"
+              rel="noreferrer"
+              className="hover:underline"
+            >
+              botchain.ai
+            </a>
+            <span className="text-[#0A0A0A]/40" aria-hidden="true">•</span>
+            <a
+              href={explorer}
+              target="_blank"
+              rel="noreferrer"
+              className="hover:underline"
+            >
+              Explorer
+            </a>
+          </div>
         </div>
       </footer>
     </div>
