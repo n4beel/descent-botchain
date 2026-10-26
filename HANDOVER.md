@@ -134,4 +134,19 @@ All findings from `docs/specs/FEEDBACK-descent.md` addressed and verified in ord
   - `/l/1` (Detail): Verified all three links present.
   - `/nonexistent` (Not Found): Verified all three links present.
 
+## Feedback round 4
+
+- **Item 1 (Shared CSS Tokens & Contrast):**
+  - Defined missing tokens in `app/globals.css`:
+    - `--border-default: #0A0A0A`
+    - `--text-secondary: #2C2C14` (13.5:1 contrast on `--bg-elevated: #FFFFFF`, WCAG AAA)
+    - `--text-tertiary: #4A4A20` (7.9:1 contrast on `--bg-elevated`, WCAG AAA)
+    - `--success: #0E6B24` (6.1:1 contrast on `--bg-elevated`, WCAG AA)
+    - `--danger: #C01B00` (5.2:1 contrast on `--bg-elevated`, WCAG AA)
+    - `--warning: #8A4E00` (6.2:1 contrast on `--bg-elevated`, WCAG AA)
+  - Updated `ConnectButton.tsx` menu items with readable typography, defined surfaces, and hover state (`hover:bg-[rgba(10,10,10,0.06)]`).
+  - Added unit test `test/lint/tokens.test.ts`.
+  - Verified `python3 scripts/check-tokens.py descent` exits 0 with zero undefined tokens.
+
+
 
